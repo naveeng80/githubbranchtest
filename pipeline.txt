@@ -1,0 +1,86 @@
+pipeline {
+    agent any
+
+    environment {
+        GITHUB_USER = 'naveeng80'   // Your GitHub username
+        GIT_CREDENTIALS =  'github-secret'  // Replace with your credentials ID
+        REPO_NAME = 'gitjenkinshelm'     // Your GitHub repository name   
+        
+        GITHUB_REGISTRY = 'ghcr.io'            // GitHub Container Registry URL
+        IMAGE_NAME = "${GITHUB_REGISTRY}/${GITHUB_USER}/${REPO_NAME}:${env.BUILD_ID}"  // Full image name
+        
+        HELM_RELEASE_NAME = 'finance-release'
+        HELM_NAMESPACE = 'default'
+		
+		//CHART_PATH = 'G:/Practise/GitJenkinshelm/gjhnvaveenworld'
+        CHART_PATH ="./gjhnvaveenworld/"
+        KUBECONFIG = 'C:/Users/Naveen/.kube/config'
+    }
+
+    stages {
+        
+        stage('Checkout') {
+            steps {
+                // Checkout code from GitHub repository
+                git (
+                    url: "https://github.com/${GITHUB_USER}/${REPO_NAME}.git",
+                    branch: 'main',
+                    credentialsId: "${GIT_CREDENTIALS}"
+                    )
+                
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build Docker image
+                    def image= docker.build("${IMAGE_NAME}")
+                    //powershell 'docker build -t myworld:latest .'
+                }
+            }
+        }
+        
+        stage('Push Docker Image to GHCR') {
+            steps {
+                script {
+                    // Log in to GitHub Container Registry using the token
+                    docker.withRegistry("https://${GITHUB_REGISTRY}", "${GIT_CREDENTIALS}") 
+                    {
+                        // Push the built image to GHCR
+                        docker.image("${IMAGE_NAME}").push()
+						//powershell 'docker push ghcr.io/naveeng80/lloyds:latestv1'
+                    }
+                }
+            }
+        }
+		
+		
+		 stage ('Helm Deploy') {
+          steps {
+            script {
+                 // Ensure Kubernetes cluster context is set (if using different clusters)
+                   // bat "kubectl config use-context minikube"
+                   
+                    echo "KUBECONFIG is set to ${env.KUBECONFIG}"
+                    
+                  // Deploy the Docker image using Helm
+                    bat """
+                        helm upgrade --install ${HELM_RELEASE_NAME} ${CHART_PATH} \
+                            --namespace ${HELM_NAMESPACE} \
+                            --set myimage.myfullreponame=${IMAGE_NAME}
+                    """
+               }
+            }
+        }
+
+    }
+
+    post {
+        always {
+            // Clean workspace after build
+            cleanWs()
+			bat "docker logout ${GITHUB_REGISTRY}"
+        }
+    }
+}

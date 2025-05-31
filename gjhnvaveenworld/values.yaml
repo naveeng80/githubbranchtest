@@ -1,0 +1,38 @@
+# Default values for helloworld.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+replicaCount: 4
+appdeployname: naveen-deployment
+appname: naveenworld
+
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+myimage:
+  myfullreponame: ""
+  #myfullreponame: ghcr.io/naveeng80/gitjenkinshelm:latest
+  #reponame: "" -- ghcr.io/naveeng80/gitjenkinshelm
+  #repotag: "" -- latest
+  Whentopullimage: Always
+  containerandtargetPort: 3000
+  appcontainername: naveen-container
+
+# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+myservice:
+  type: LoadBalancer
+  port: 80
+  servicename: naveen-service
+  myprotocol: TCP
+
+myscret:
+  myreposecretname: github-docker-secret
+
+dockerConfig:
+  auths:
+    "ghcr.io": 
+       auth: "bmF2ZWVuZzgwOmdocF9ERER2U296bnU0NmU1Sm5nWE8xZEJGT0ZJT0tENHExSEx2WW8="
+
+
+#[Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("username:password"))
+
+
